@@ -37,9 +37,20 @@
 #endif
 
 void usage() {
-	printf("parallel [OPTIONS] command -- arguments\n\tfor each argument, "
-	       "run command with argument, in parallel\n");
-	printf("parallel [OPTIONS] -- commands\n\trun specified commands in parallel\n");
+	printf( "Usage: parallel [OPTIONS] COMMAND -- ARGUMENTS\n" \
+		"         Run COMMAND in parallel and pass one ARGUMENT to each instance.\n" \
+		"   or: parallel [OPTIONS] -- COMMANDS\n" \
+		"         Run specified COMMANDS in parallel.\n\n" \
+		"Options:\n" \
+		"  -h           Display this help.\n" \
+		"  -j maxjobs   Use to limit the number of jobs that are run at the same time.\n" \
+		"  -l maxload   Wait as needed to avoid starting new jobs when the system's load\n" \
+		"                 average is not below the specified limit.\n" \
+		"  -i           Normally the command is passed the argument at the end of its\n" \
+		"                 command line. With this option, any instances of \"{}\" in the\n" \
+		"                 command are replaced with the argument.\n" \
+		"  -n           Number of arguments to pass to a command at a time. Default is 1.\n" \
+		"                 Incompatible with -i.\n");
 	exit(1);
 }
 
