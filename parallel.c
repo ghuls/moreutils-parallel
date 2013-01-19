@@ -49,8 +49,9 @@ void usage() {
 		"  -i           Normally the command is passed the argument at the end of its\n" \
 		"                 command line. With this option, any instances of \"{}\" in the\n" \
 		"                 command are replaced with the argument.\n" \
-		"  -n           Number of arguments to pass to a command at a time. Default is 1.\n" \
-		"                 Incompatible with -i.\n");
+		"  -n #args     Number of arguments to pass to a command at a time. Default is 1.\n" \
+		"                 When specified together with -i, each {} (up to #args) will be\n" \
+		"                 replaced by a different argument.\n");
 	exit(1);
 }
 
@@ -63,6 +64,8 @@ void exec_child(char **command, char **arguments, int replace_cb, int nargs) {
 		char **argv;
 		int argc = 0;
 		int i;
+		int j;
+		int n = 0;
 		char *s;
 
 		while (command[argc] != 0) {
@@ -73,16 +76,32 @@ void exec_child(char **command, char **arguments, int replace_cb, int nargs) {
 		argv = calloc(sizeof(char*), argc + nargs);
 
 		for (i = 0; i < argc; i++) {
-			while (replace_cb && (s=strstr(command[i], "{}"))) {
-				char *buf=malloc(strlen(command[i]) + strlen(arguments[0]));
-				s[0]='\0';
-				sprintf(buf, "%s%s%s", command[i], arguments[0], s+2);
-				command[i]=buf;
+			if (replace_cb == 1) {
+				/* Replace each {} with the same argument (-i used without -n). */
+				while ((s=strstr(command[i], "{}"))) {
+					char *buf=malloc(strlen(command[i]) + strlen(arguments[0]));
+					s[0]='\0';
+					sprintf(buf, "%s%s%s", command[i], arguments[0], s+2);
+					command[i]=buf;
+				}
+			} else if (replace_cb == 2) {
+				/* Replace each {} (up to nargs) with a different argument (-i and -n used). */
+				for (j = n; j < nargs; j++) {
+					if ((s=strstr(command[i], "{}"))) {
+						char *buf=malloc(strlen(command[i]) + strlen(arguments[0]));
+						s[0]='\0';
+						sprintf(buf, "%s%s%s", command[i], arguments[j], s+2);
+						command[i]=buf;
+						n++;
+					}
+				}
 			}
 			argv[i] = command[i];
 		}
-		if (! replace_cb)
+		if (! replace_cb) {
+			/* Add nargs at the end of the command (-n used without -i). */
 			memcpy(argv + i - 1, arguments, nargs * sizeof(char *));
+		}
 		execvp(argv[0], argv);
 		exit(1);
 	}
@@ -125,7 +144,14 @@ int main(int argc, char **argv) {
 	int arglen = 0;
 	int cidx = 0;
 	int returncode = 0;
+	/* Replace {} string in command line with provided arguments:
+	 *   - 0: Don't replace {} (no -i specified).
+	 *   - 1: Replace all {} with the same argument (-i used without -n).
+	 *   - 2: Replace each {} with a different argument (-i and -n used).
+	 *        The number of {} strings that are replaced, depends on the
+	 *        number specified by -n. */
 	int replace_cb = 0;
+	int n_isset = 0;
 	char *t;
 
 	while ((argv[optind] && strcmp(argv[optind], "--") != 0) &&
@@ -163,6 +189,7 @@ int main(int argc, char **argv) {
 					optarg);
 				exit(2);
 			}
+			n_isset = 1;
 			break;
 		default: /* ’?’ */
 			usage();
@@ -170,11 +197,10 @@ int main(int argc, char **argv) {
 		}
 	}
 	
-	if (replace_cb && argsatonce > 1) {
-		fprintf(stderr, "options -i and -n are incomaptible\n");
-		exit(2);
+	if (replace_cb && n_isset) {
+		replace_cb = 2;
 	}
-
+	
 	if (maxjobs < 0) {
 #ifdef _SC_NPROCESSORS_ONLN
 		maxjobs = sysconf(_SC_NPROCESSORS_ONLN);
