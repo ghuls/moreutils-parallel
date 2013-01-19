@@ -19,7 +19,7 @@ Written by Joey Hess
 			<firstname>Joey</firstname>
 			<surname>Hess</surname>
 		</author>
-		<date>2009-07-02</date>
+		<date>2012-01-20</date>
 	</refentryinfo>
 
 	<refmeta>
@@ -94,11 +94,13 @@ Written by Joey Hess
 		</varlistentry>
 		
 		<varlistentry>
-			<term><option>-n</option></term>
+			<term><option>-n #args</option></term>
 			<listitem>
 				<para>Number of arguments to pass to a
 				command at a time. Default is 1.
-				Incompatible with -i</para>
+				When specified together with -i, each 
+				{} (up to #args) will be replaced by a
+				different argument.</para>
 			</listitem>
 		</varlistentry>
 		
@@ -139,7 +141,43 @@ Written by Joey Hess
 	</para>
 
 	<para>This runs three independent commands in parallel.</para>
-
+	
+	<para>
+	<cmdsynopsis>
+		<command>parallel -j 2 -n 2 mv -- photo1.jpg photo2.jpg photo3.jpg photo4.jpg</command>
+	</cmdsynopsis>
+	</para>
+	
+	<para>This runs two mv commands at the same time.
+	Two arguments are passed to mv.
+	For the first mv command, the executed command line will be:
+	<command>mv photo1.jpg photo2.jpg</command>
+	</para>
+	
+	<para>
+	<cmdsynopsis>
+		<command>parallel -j 3 -i mv {}.JPG {}.jpeg -- photo1 photo2 photo3</command>
+	</cmdsynopsis>
+	</para>
+	
+ 	<para>This runs three mv commands at the same time.
+	In each mv command, the {} strings will be replaced by the current argument.
+	For the first mv command, the executed command line will be:
+	<command>mv photo1.JPG photo1.jpeg</command>
+	</para>
+	
+	<para>
+	<cmdsynopsis>
+		<command>parallel -j 2 -n 2 -i mv {}.JPG {}.jpeg -- photo1 photo2 photo3 photo4</command>
+ 	</cmdsynopsis>
+	</para>
+	
+ 	<para>This runs two mv commands at the same time.
+ 	In each mv command, the {} strings will be replaced by different arguments.
+ 	For the first mv command, the executed command line will be:
+	<command>mv photo1.JPG photo2.jpeg</command>
+	</para>
+	
 	</refsect1>
 
 	<refsect1>
@@ -155,7 +193,7 @@ Written by Joey Hess
 	<refsect1>
 		<title>AUTHOR</title>
 		<para>
-			Tollef Fog Heen
+			Tollef Fog Heen and Gert Hulselmans
 		</para>
 	</refsect1>
 
